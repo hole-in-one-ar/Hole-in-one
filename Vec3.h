@@ -18,7 +18,7 @@ public:
 
     Vec3 operator+(const Vec3 &b);
 
-    Vec3 operator-(Vec3 &b);
+    Vec3 operator-(const Vec3 &b);
 
     float operator*(const Vec3 &b);
 

@@ -19,7 +19,6 @@ private:
     //vector to store last balls position and velocity, used for Verlet integration
     vector<PhysicsBall> lastBalls;
     //mass of the ball, default value is 1
-    float mass = 1;
 
 private:
     //an imaginary force
@@ -75,16 +74,9 @@ public:
     Input:          Vec3 position: the position of the ball
                     float radium: the radium of the ball
                     Vec3 velocity: the initial velocity of the ball
+                    float mass: the mass of the ball
     *************************************************/
-    void addBalls(const Vec3 &position, float radium, const Vec3 &velocity);
-
-    /*************************************************
-    Function:       setMass
-    Description:    set the mass of the ball
-    Input:          float mass: the mass of the ball
-    Others:         the default value is 1
-    *************************************************/
-    void setMass(float mass);
+    void addBalls(const Vec3 &position, float radium, const Vec3 &velocity, const float &mass);
 
     /*************************************************
     Function:       setDefalutDamping

@@ -24,7 +24,7 @@ float Vec3::operator*(const Vec3 &b) {
     return this->x * b.x + this->y * b.y + this->z * b.z;
 }
 
-Vec3 Vec3::operator-(Vec3 &b) {
+Vec3 Vec3::operator-(const Vec3 &b) {
     Vec3 a;
     a.x = this->x - b.x;
     a.y = this->y - b.y;

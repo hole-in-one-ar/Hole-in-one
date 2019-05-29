@@ -7,14 +7,15 @@ PhysicsBall::PhysicsBall() {
 
 }
 
-PhysicsBall::PhysicsBall(const Vec3 &originIn, const float &rIn, const Vec3 &velo) {
+PhysicsBall::PhysicsBall(const Vec3 &originIn, const float &rIn, const Vec3 &velo, const float &massIn) {
     origin = originIn;
     radium = rIn;
     velocity = velo;
+    mass = massIn;
 }
 
 PhysicsBall::PhysicsBall(const float &oInx, const float &oIny, const float &oInz, const float &rIn, const float &vInx,
-                         const float &vIny, const float &vInz) {
+                         const float &vIny, const float &vInz, const float& massIn) {
     origin = Vec3(oInx, oIny, oInz);
     radium = rIn;
     velocity = Vec3(vInx, vIny, vInz);
@@ -24,6 +25,7 @@ PhysicsBall::PhysicsBall(const PhysicsBall &ball) {
     origin = ball.origin;
     radium = ball.radium;
     velocity = ball.velocity;
+    mass = ball.mass;
 }
 
 const Vec3 &PhysicsBall::getOrigin() const {
@@ -48,4 +50,12 @@ const Vec3 &PhysicsBall::getVelocity() const {
 
 void PhysicsBall::setVelocity(const Vec3 &velocity) {
     PhysicsBall::velocity = velocity;
+}
+
+float PhysicsBall::getMass() const {
+    return mass;
+}
+
+void PhysicsBall::setMass(float mass) {
+    PhysicsBall::mass = mass;
 }
