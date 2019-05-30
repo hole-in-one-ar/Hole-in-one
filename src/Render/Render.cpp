@@ -228,13 +228,13 @@ void Render::setCamera(Transform transform) {
 	holeSide.setParam("V", camera);
 }
 
-void Render::drawBall(Ball b) {
+void Render::drawBall(BallPos b) {
 	ball.setParam("o", b.p);
 	ball.setParam("s", b.r);
 	ball.render();
 }
 
-void Render::drawHole(Hole h) {
+void Render::drawHole(HolePos h) {
 	hole.setParam("o", Vector3{h.p.x, h.p.y, 0});
 	hole.setParam("s", h.r);
 	hole.render();

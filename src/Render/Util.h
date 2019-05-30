@@ -64,12 +64,12 @@ struct Transform {
 	}
 };
 
-struct Ball {
+struct BallPos {
 	Vector3 p;
 	Real r;
 };
 
-struct Hole {
+struct HolePos {
 	Vector2 p;
 	Real r;
 };

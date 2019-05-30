@@ -61,7 +61,7 @@ class Render {
 public:
 	Render(float w, float h);
 	void setCamera(Transform);
-	void drawBall(Ball);
-	void drawHole(Hole);
+	void drawBall(BallPos);
+	void drawHole(HolePos);
 	void drawBackground(Image);
 };
