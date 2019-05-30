@@ -86,6 +86,12 @@ void Material::setParam(Uniform name, Vector2 v) {
 void Material::setParam(Uniform name, Vector3 v) {
 	paramV3[name] = v;
 }
+void Material::setParam(Uniform name, Matrix4 v) {
+	paramM4[name] = v;
+}
+void Material::setParam(Uniform name, Transform v) {
+	paramM4[name] = *reinterpret_cast<Matrix4*>(&v);
+}
 
 void Material::use() {
 	glUseProgram(program);
@@ -97,6 +103,9 @@ void Material::use() {
 	}
 	for (auto p : paramV3) {
 		glUniform3f(uniformLoc(p.first), p.second.x, p.second.y, p.second.z);
+	}
+	for (auto p : paramM4) {
+		glUniformMatrix4fv(uniformLoc(p.first), 1, true, p.second.m);
 	}
 	glVertexAttribPointer(0,3,GL_FLOAT,false,0,0);
 }
@@ -114,15 +123,37 @@ void Object::render() {
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, mesh.vertexCount);
 }
 
-Render::Render() {
+Render::Render(float w, float h) {
 	glewInit();
-
 	buildObjects();
+	
+	float fovy = PI / 3;
+	float aspect = w / h;
+	float near = 0.01;
+	float far = 100.0;
+	float f = 1 / tan(fovy / 2);
+	Matrix4 proj = {
+		f / aspect, 0, 0, 0,
+		0, -f, 0, 0,
+		0, 0, (far + near) / (near - far), (2 * far * near) / (near - far),
+		0, 0, -1, 0
+	};
+	ball.setParam("P", proj);
+	hole.setParam("P", proj);
+	holeSide.setParam("P", proj);
+}
+
+void GLAPIENTRY errorCB( GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam ) {
+	if(type == GL_DEBUG_TYPE_ERROR) std::cerr << "[GL ERROR] " << message << std::endl;
 }
 
 void Render::buildObjects() {
 	VBO buffers[3];
 	glGenBuffers(3, buffers);
+
+	glEnable(GL_DEBUG_OUTPUT);
+	glDebugMessageCallback(errorCB,0);
+	
 	Mesh ballModel = { buffers[0], 0 };
 	Mesh holeModel = { buffers[1], 0 };
 	Mesh holeSideModel = { buffers[2], 0 };
@@ -192,16 +223,21 @@ void Render::buildModels(Mesh &ballModel, Mesh &holeModel, Mesh &holeSideModel) 
 
 void Render::setCamera(Transform transform) {
 	camera = transform;
+	ball.setParam("V", camera);
+	hole.setParam("V", camera);
+	holeSide.setParam("V", camera);
 }
 
 void Render::drawBall(Ball b) {
-	static float time = 0;
-	time++;
-	ball.setParam("time", time);
+	ball.setParam("o", b.p);
+	ball.setParam("s", b.r);
 	ball.render();
 }
 
 void Render::drawHole(Hole h) {
+	hole.setParam("o", Vector3{h.p.x, h.p.y, 0});
+	hole.setParam("s", h.r);
+	hole.render();
 }
 
 void Render::drawBackground(Image bg) {

@@ -27,6 +27,7 @@ class Material {
 	std::map<Uniform, float>   paramV1;
 	std::map<Uniform, Vector2> paramV2;
 	std::map<Uniform, Vector3> paramV3;
+	std::map<Uniform, Matrix4> paramM4;
 	UniformLoc uniformLoc(Uniform u);
 public:
 	Material();
@@ -34,6 +35,8 @@ public:
 	void setParam(Uniform name, float value);
 	void setParam(Uniform name, Vector2 value);
 	void setParam(Uniform name, Vector3 value);
+	void setParam(Uniform name, Matrix4 value);
+	void setParam(Uniform name, Transform value);
 	void use();
 };
 
@@ -56,7 +59,7 @@ class Render {
 	void buildModels(Mesh &ballModel, Mesh &holeModel, Mesh &holeSideModel);
 	void sendModelData(Mesh&, std::vector<Vector3>&);
 public:
-	Render();
+	Render(float w, float h);
 	void setCamera(Transform);
 	void drawBall(Ball);
 	void drawHole(Hole);
