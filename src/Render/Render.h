@@ -43,10 +43,11 @@ public:
 class Object {
 	Mesh mesh;
 	Material mat;
+	Vector3 &C;
 	Transform &V;
 	Matrix4 &P;
 public:
-	Object(Transform& V, Matrix4& P);
+	Object(Vector3& C, Transform& V, Matrix4& P);
 	void build(Mesh mesh, Material mat);
 	template <class T> void setParam(Uniform name, T value) {
 		mat.setParam(name, value);
@@ -55,6 +56,7 @@ public:
 };
 
 class Render {
+	Vector3 C;
 	Transform V;
 	Matrix4 P;
 	Object ball, hole, ground, holeSide;
@@ -63,7 +65,7 @@ class Render {
 	void sendModelData(Mesh&, std::vector<Vector3>&);
 public:
 	Render(float w, float h);
-	void setCamera(Transform);
+	void setCamera(Vector3, Transform);
 	void drawBall(BallPos);
 	void drawHole(HolePos);
 	void drawBackground(Image);

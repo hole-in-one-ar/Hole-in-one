@@ -18,7 +18,7 @@ int main() {
 	float t = 0;
 	while (window.alive()) {
 		t += 0.01;
-		render.setCamera(Transform::lookAt(Vector3{ 20,0,6 }, Vector3{ 0,0,4 }));
+		render.setCamera(Vector3{ 20,0,6 }, Transform::lookAt(Vector3{ 20,0,6 }, Vector3{ 0,0,4 }));
 		render.drawBackground({});
 		render.drawHole(hole);
 		for (const auto &b : physics.getBalls()) {

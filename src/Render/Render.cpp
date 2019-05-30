@@ -111,7 +111,7 @@ void Material::use() {
 	glVertexAttribPointer(0,3,GL_FLOAT,false,0,0);
 }
 
-Object::Object(Transform& V, Matrix4& P): V(V), P(P) {};
+Object::Object(Vector3& C, Transform& V, Matrix4& P): C(C), V(V), P(P) {};
 
 void Object::build(Mesh me, Material ma) {
 	mesh = me;
@@ -120,6 +120,7 @@ void Object::build(Mesh me, Material ma) {
 
 void Object::render() {
 	glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
+	mat.setParam("cameraPos", C);
 	mat.setParam("V", V);
 	mat.setParam("P", P);
 	mat.use();
@@ -127,7 +128,7 @@ void Object::render() {
 }
 
 Render::Render(float w, float h)
-	: ball(V, P), hole(V, P), ground(V, P), holeSide(V, P) {
+	: ball(C, V, P), hole(C, V, P), ground(C, V, P), holeSide(C, V, P) {
 	glewInit();
 	buildObjects();
 	
@@ -224,7 +225,8 @@ void Render::buildModels(Mesh &planeModel, Mesh &ballModel, Mesh &holeSideModel)
 	sendModelData(holeSideModel, verts);
 }
 
-void Render::setCamera(Transform transform) {
+void Render::setCamera(Vector3 camera, Transform transform) {
+	C = camera;
 	V = transform;
 }
 
