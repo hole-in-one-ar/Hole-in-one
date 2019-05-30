@@ -1,5 +1,5 @@
-#include "Render.h"
-#include "Window.h"
+#include "Render/Render.h"
+#include "Render/Window.h"
 
 int main() {
 	Window window(800, 600, "app");
