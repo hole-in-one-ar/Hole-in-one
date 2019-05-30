@@ -2,6 +2,7 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <opencv2/opencv.hpp>
 
 Material::Material() {}
 
@@ -110,7 +111,7 @@ void Material::use() {
 	glVertexAttribPointer(0,3,GL_FLOAT,false,0,0);
 }
 
-Object::Object() {};
+Object::Object(Transform& V, Matrix4& P): V(V), P(P) {};
 
 void Object::build(Mesh me, Material ma) {
 	mesh = me;
@@ -119,11 +120,14 @@ void Object::build(Mesh me, Material ma) {
 
 void Object::render() {
 	glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
+	mat.setParam("V", V);
+	mat.setParam("P", P);
 	mat.use();
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, mesh.vertexCount);
 }
 
-Render::Render(float w, float h) {
+Render::Render(float w, float h)
+	: ball(V, P), hole(V, P), ground(V, P), holeSide(V, P) {
 	glewInit();
 	buildObjects();
 	
@@ -132,15 +136,12 @@ Render::Render(float w, float h) {
 	float near = 0.01;
 	float far = 100.0;
 	float f = 1 / tan(fovy / 2);
-	Matrix4 proj = {
+	P = {
 		f / aspect, 0, 0, 0,
 		0, -f, 0, 0,
 		0, 0, (far + near) / (near - far), (2 * far * near) / (near - far),
 		0, 0, -1, 0
 	};
-	ball.setParam("P", proj);
-	hole.setParam("P", proj);
-	holeSide.setParam("P", proj);
 }
 
 void GLAPIENTRY errorCB( GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam ) {
@@ -154,17 +155,19 @@ void Render::buildObjects() {
 	glEnable(GL_DEBUG_OUTPUT);
 	glDebugMessageCallback(errorCB,0);
 	
-	Mesh ballModel = { buffers[0], 0 };
-	Mesh holeModel = { buffers[1], 0 };
+	Mesh planeModel = { buffers[0], 0 };
+	Mesh ballModel = { buffers[1], 0 };
 	Mesh holeSideModel = { buffers[2], 0 };
-	buildModels(ballModel, holeModel, holeSideModel);
+	buildModels(planeModel, ballModel, holeSideModel);
 
 	Material ballMat("default.vert", "ball.frag");
-	Material holeMat("default.vert", "ball.frag");
-	Material holeSideMat("default.vert", "ball.frag");
+	Material holeMat("default.vert", "hole.frag");
+	Material groundMat("default.vert", "ground.frag");
+	Material holeSideMat("default.vert", "holeSide.frag");
 
 	ball.build(ballModel, ballMat);
-	hole.build(holeModel, holeMat);
+	hole.build(planeModel, holeMat);
+	ground.build(planeModel, groundMat);
 	holeSide.build(holeSideModel, holeSideMat);
 }
 
@@ -182,9 +185,16 @@ void Render::sendModelData(Mesh &mesh, std::vector<Vector3> &verts) {
 	mesh.vertexCount = verts.size();
 }
 
-void Render::buildModels(Mesh &ballModel, Mesh &holeModel, Mesh &holeSideModel) {
+void Render::buildModels(Mesh &planeModel, Mesh &ballModel, Mesh &holeSideModel) {
 	std::vector<Vector3> verts;
 	
+	// planeModel
+	verts.clear();
+	verts.push_back({1,1,0});
+	verts.push_back({-1,1,0});
+	verts.push_back({1,-1,0});
+	verts.push_back({-1,-1,0});
+	sendModelData(planeModel, verts);
 	// ballModel
 	verts.clear();
 	const unsigned int latitude = 12;
@@ -202,13 +212,6 @@ void Render::buildModels(Mesh &ballModel, Mesh &holeModel, Mesh &holeSideModel) 
 		verts.push_back(sphereCoord(lat + unitLat, 2 * PI));
 	}
 	sendModelData(ballModel, verts);
-	// holeModel
-	verts.clear();
-	verts.push_back({1,1,0});
-	verts.push_back({-1,1,0});
-	verts.push_back({1,-1,0});
-	verts.push_back({-1,-1,0});
-	sendModelData(holeModel, verts);
 	// holeSideModel
 	verts.clear();
 	const unsigned int angle = 24;
@@ -216,16 +219,13 @@ void Render::buildModels(Mesh &ballModel, Mesh &holeModel, Mesh &holeSideModel) 
 	for (int i = 0; i <= angle; i++) {
 		const float a = i * unitAngle;
 		verts.push_back({ cos(a), sin(a), 0 });
-		verts.push_back({ cos(a), sin(a), 1 });
+		verts.push_back({ cos(a), sin(a), -10 });
 	}
 	sendModelData(holeSideModel, verts);
 }
 
 void Render::setCamera(Transform transform) {
-	camera = transform;
-	ball.setParam("V", camera);
-	hole.setParam("V", camera);
-	holeSide.setParam("V", camera);
+	V = transform;
 }
 
 void Render::drawBall(BallPos b) {
@@ -235,10 +235,38 @@ void Render::drawBall(BallPos b) {
 }
 
 void Render::drawHole(HolePos h) {
-	hole.setParam("o", Vector3{h.p.x, h.p.y, 0});
+	Vector3 o { h.p.x, h.p.y, 0 };
+	// Writing Stencil
+	glStencilFunc(GL_ALWAYS, 1, 1);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+	glColorMask(0, 0, 0, 0);
+	glDepthMask(0);
+	hole.setParam("o", o);
 	hole.setParam("s", h.r);
 	hole.render();
+	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+	glDepthMask(1);
+	// Check Stencil
+	glStencilFunc(GL_NOTEQUAL, 1, 1);
+	ground.setParam("o", Vector3{ 0, 0, 0.01f });
+	ground.setParam("s", 1000);
+	ground.render();
+	glStencilFunc(GL_ALWAYS, 0, 1);
+	glColorMask(1, 1, 1, 1);
+
+	holeSide.setParam("o", o);
+	holeSide.setParam("s", h.r);
+	holeSide.render();
 }
 
 void Render::drawBackground(Image bg) {
+	static bool lo = true;
+	static cv::Mat m;
+	if (lo) {
+		m = cv::imread("../res/bg.png");
+		lo = false;
+	}
+	glDepthMask(0);
+	glDrawPixels(960, 540, GL_BGR, GL_UNSIGNED_BYTE, m.data);
+	glDepthMask(1);
 }
