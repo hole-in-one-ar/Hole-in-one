@@ -11,7 +11,6 @@ bool is_corrected_edge_drawn = false;
 bool is_corrected_corner_drawn = false;
 bool is_marker_drawn = true;
 
-
 // Drawing Settings
 const bool kIsLineClosed = true;
 const cv::Scalar kEdgeColor(0, 50, 200);
@@ -21,7 +20,7 @@ const int kCircleSize = 5;
 cv::Scalar kEdgePointColor(0, 0, 255);
 
 const int kNumOfEdgePoints = 6; //the number of squares which compose one edge
-int kMarkerLength = 100;
+float kMarkerLength = 0.05;
 const std::string gameWinName = "Game Window";
 const std::string debugWinName = "Debug Window";
 
