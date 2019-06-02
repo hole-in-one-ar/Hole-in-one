@@ -25,7 +25,9 @@ Window::Window(uint w, uint h, const char* title) {
 	glfwSwapInterval(1);
 
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_STENCIL_TEST);
 	glClearColor(0, 0, 0, 1);
+	glClearStencil(0);
 	glViewport(0, 0, w, h);
 }
 
