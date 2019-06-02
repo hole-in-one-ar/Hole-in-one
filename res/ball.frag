@@ -13,5 +13,6 @@ void main(void) {
 	c += mix(0, 0.4, smoothstep(1,0,dot(viewDir,-n)));
 	// AO
 	c *= mix(1, 0.3, smoothstep(0.2,1,dot(n, vec3(0,0,-1))));
+	c = sin(worldPos*5.0)*0.5+0.5;
 	gl_FragColor = vec4(c,1);
 }

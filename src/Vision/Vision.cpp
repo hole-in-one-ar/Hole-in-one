@@ -34,6 +34,10 @@ void Vision::initVideoStream( cv::VideoCapture &cap ) {
 		cap.release();
 
 	cap.open(0); // open the default camera
+	cap.set(cv::CAP_PROP_FRAME_WIDTH, 1280);
+	cap.set(cv::CAP_PROP_FRAME_HEIGHT, 720);
+	std::cout << cap.get(cv::CAP_PROP_FRAME_WIDTH) << std::endl;
+	std::cout << cap.get(cv::CAP_PROP_FRAME_HEIGHT) << std::endl;
 	if ( cap.isOpened()==false ) {
 		std::cout << "No webcam found, using a video file" << std::endl;
 		cap.open("MarkerMovie.mpg");
@@ -75,8 +79,8 @@ int Vision::subpixSampleSafe(const cv::Mat img, cv::Point2f point) {
  * fit by least squares method and return the peak position
  */
 cv::Point2f Vision::findPeakByFitting(cv::Mat img) {
-	cv::Mat target = img.col(1); //col=1, row=n のベクトル
-  //最小二乗法でフィッティングを行う。
+	cv::Mat target = img.col(1); // dimension: col=1, row=n
+  // perform a fitting by least squares method
 	int n = target.rows;
 	int sx4 = 0;
 	int sx3 = 0;
@@ -88,7 +92,7 @@ cv::Point2f Vision::findPeakByFitting(cv::Mat img) {
 
 	for (int i=0; i<n; i++) {
 		int x = i;
-		int y = (int)target.at<uchar>(i, 1);
+		int y = (int)target.at<uchar>(i, 0);
 		sx4  += x * x * x * x;
 		sx3  += x * x * x;
 		sx2  += x * x;
@@ -336,8 +340,14 @@ void Vision::detectMarker() {
       }
       Marker marker;
       marker.code = getMarkerCode(img_marker);
+	  for (auto &c : preciseCorners) {
+		  std::cout << "(" << c.x << "," << c.y << ")";
+		  c.x -= 640;
+		  c.y -= 360;
+	  }
+	  std::cout << std::endl;
       estimateSquarePose(marker.resultMatrix, &preciseCorners.front(), kMarkerLength);
-      marker.print_matrix();
+      //marker.print_matrix();
       marker_list.push_back(marker);
     }
   } //loop of each contour
@@ -353,16 +363,16 @@ void Vision::execGame() {
 
 }
 
-int Vision::init() {
+Vision::Vision() {
   std::cout << "Startup (Press ESC to quit)" << std::endl;
 	cv::namedWindow(gameWinName, cv::WINDOW_AUTOSIZE);
 	cv::namedWindow(debugWinName, cv::WINDOW_AUTOSIZE);
   initVideoStream(cap);
-  return 0;
 }
 
 int Vision::updateCamera() {
   cap >> img_camera;
+  cv::flip(img_camera, img_camera, -1);
   if(img_camera.empty()){
     printf("Could not query frame. Trying to reinitialize.\n");
     initVideoStream(cap);

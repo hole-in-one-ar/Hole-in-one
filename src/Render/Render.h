@@ -56,16 +56,17 @@ public:
 };
 
 class Render {
+	float width, height;
 	Vector3 C;
 	Transform V;
 	Matrix4 P;
-	Object ball, hole, ground, holeSide;
+	Object ball, hole, ground, holeSide, ballShadow;
 	void buildObjects();
 	void buildModels(Mesh &planeModel, Mesh &ballModel, Mesh &holeSideModel);
 	void sendModelData(Mesh&, std::vector<Vector3>&);
 public:
 	Render(float w, float h);
-	void setCamera(Vector3, Transform);
+	void setCamera(Transform);
 	void drawBall(BallPos);
 	void drawHole(HolePos);
 	void drawBackground(Image);

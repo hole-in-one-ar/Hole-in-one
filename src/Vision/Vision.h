@@ -46,11 +46,11 @@ private:
   void execCalibration();
   void execGame();
 public:
+  Vision();
   cv::Mat img_camera;
   cv::Mat img_marked;
   cv::Mat img_marker;
   MarkerList marker_list;
-  int init();
   int updateCamera();
   void detectMarker();
   int end();

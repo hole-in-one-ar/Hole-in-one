@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <vector>
+#include <opencv2/opencv.hpp>
 
 using Real = float;
 const Real PI = 3.1415926535;
@@ -62,6 +63,47 @@ struct Transform {
 			0, 0, 0, 1
 		};
 	}
+	Vector3 getOrigin() const {
+		return { m[3], m[7], m[11] };
+	}
+	Vector3 getViewOrigin() const {
+		Vector3 P = { -m[3], -m[7], -m[11] };
+		Vector3 RTx = { m[0], m[4], m[8] };
+		Vector3 RTy = { m[1], m[5], m[9] };
+		Vector3 RTz = { m[2], m[6], m[10] };
+		return Vector3{
+			Vector3::dot(RTx, P),
+			Vector3::dot(RTy, P),
+			Vector3::dot(RTz, P),
+		};
+	}
+	Vector3 getNormal() const {
+		return { m[2], m[6], m[10] };
+	}
+	Transform inverse() const {
+		Vector3 P = { -m[3], -m[7], -m[11] };
+		Vector3 RTx = { m[0], m[4], m[8] };
+		Vector3 RTy = { m[1], m[5], m[9] };
+		Vector3 RTz = { m[2], m[6], m[10] };
+		return Transform {
+			RTx.x, RTx.y, RTx.z, Vector3::dot(RTx, P),
+			RTy.x, RTy.y, RTy.z, Vector3::dot(RTy, P),
+			RTz.x, RTz.y, RTz.z, Vector3::dot(RTz, P),
+			0, 0, 0, 1
+		};
+	}
+	Transform transfer(Transform base) const {
+		Transform t;
+		for (int i = 0; i < 4; i++) {
+			for (int j = 0; j < 4; j++) {
+				t.m[i * 4 + j] = 0;
+				for (int k = 0; k < 4; k++) {
+					t.m[i * 4 + j] += m[i * 4 + k] * base.m[k * 4 + j];
+				}
+			}
+		}
+		return t;
+	}
 };
 
 struct BallPos {
@@ -74,5 +116,4 @@ struct HolePos {
 	Real r;
 };
 
-struct Image {
-};
+using Image = cv::Mat;

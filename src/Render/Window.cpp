@@ -26,6 +26,8 @@ Window::Window(uint w, uint h, const char* title) {
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_STENCIL_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glClearColor(0, 0, 0, 1);
 	glClearStencil(0);
 	glViewport(0, 0, w, h);

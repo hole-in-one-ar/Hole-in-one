@@ -128,7 +128,8 @@ void Object::render() {
 }
 
 Render::Render(float w, float h)
-	: ball(C, V, P), hole(C, V, P), ground(C, V, P), holeSide(C, V, P) {
+	: width(w), height(h)
+	, ball(C, V, P), hole(C, V, P), ground(C, V, P), holeSide(C, V, P), ballShadow(C, V, P) {
 	glewInit();
 	buildObjects();
 	
@@ -165,11 +166,13 @@ void Render::buildObjects() {
 	Material holeMat("default.vert", "hole.frag");
 	Material groundMat("default.vert", "ground.frag");
 	Material holeSideMat("default.vert", "holeSide.frag");
+	Material ballShadowMat("default.vert", "ballShadow.frag");
 
 	ball.build(ballModel, ballMat);
 	hole.build(planeModel, holeMat);
 	ground.build(planeModel, groundMat);
 	holeSide.build(holeSideModel, holeSideMat);
+	ballShadow.build(planeModel, ballShadowMat);
 }
 
 Vector3 sphereCoord(float theta, float phi) { // latitude, longitude
@@ -225,8 +228,8 @@ void Render::buildModels(Mesh &planeModel, Mesh &ballModel, Mesh &holeSideModel)
 	sendModelData(holeSideModel, verts);
 }
 
-void Render::setCamera(Vector3 camera, Transform transform) {
-	C = camera;
+void Render::setCamera(Transform transform) {
+	C = transform.getViewOrigin();
 	V = transform;
 }
 
@@ -234,6 +237,9 @@ void Render::drawBall(BallPos b) {
 	ball.setParam("o", b.p);
 	ball.setParam("s", b.r);
 	ball.render();
+	ballShadow.setParam("o", Vector3{ b.p.x, b.p.y, 0.002f });
+	ballShadow.setParam("s", b.r);
+	ballShadow.render();
 }
 
 void Render::drawHole(HolePos h) {
@@ -250,7 +256,7 @@ void Render::drawHole(HolePos h) {
 	glDepthMask(1);
 	// Check Stencil
 	glStencilFunc(GL_NOTEQUAL, 1, 1);
-	ground.setParam("o", Vector3{ 0, 0, 0.01f });
+	ground.setParam("o", Vector3{ 0, 0, 0.001f });
 	ground.setParam("s", 1000);
 	ground.render();
 	glStencilFunc(GL_ALWAYS, 0, 1);
@@ -262,13 +268,9 @@ void Render::drawHole(HolePos h) {
 }
 
 void Render::drawBackground(Image bg) {
-	static bool lo = true;
-	static cv::Mat m;
-	if (lo) {
-		m = cv::imread("../res/bg.png");
-		lo = false;
-	}
 	glDepthMask(0);
-	glDrawPixels(960, 540, GL_BGR, GL_UNSIGNED_BYTE, m.data);
+	Image resized;
+	cv::resize(bg, resized, cv::Size(width, height));
+	glDrawPixels(width, height, GL_BGR, GL_UNSIGNED_BYTE, resized.data);
 	glDepthMask(1);
 }
