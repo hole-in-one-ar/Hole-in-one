@@ -21,7 +21,6 @@ cv::Scalar kEdgePointColor(0, 0, 255);
 
 const int kNumOfEdgePoints = 6; //the number of squares which compose one edge
 float kMarkerLength = 0.05;
-const std::string gameWinName = "Game Window";
 const std::string debugWinName = "Debug Window";
 
 
@@ -365,7 +364,6 @@ void Vision::execGame() {
 
 Vision::Vision() {
   std::cout << "Startup (Press ESC to quit)" << std::endl;
-	cv::namedWindow(gameWinName, cv::WINDOW_AUTOSIZE);
 	cv::namedWindow(debugWinName, cv::WINDOW_AUTOSIZE);
   initVideoStream(cap);
 }

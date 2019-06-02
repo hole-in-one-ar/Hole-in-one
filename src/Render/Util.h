@@ -98,7 +98,7 @@ struct Transform {
 			for (int j = 0; j < 4; j++) {
 				t.m[i * 4 + j] = 0;
 				for (int k = 0; k < 4; k++) {
-					t.m[i * 4 + j] += m[i * 4 + k] * base.m[k * 4 + j];
+					t.m[i * 4 + j] += base.m[i * 4 + k] * m[k * 4 + j];
 				}
 			}
 		}

@@ -21,7 +21,7 @@ int main() {
 		return true;
 	});
 
-	HolePos hole{ {0,0}, 0.1f };
+	HolePos hole{ {0,0}, 0.02f };
 	physics.setHole(hole.p.x, hole.p.y, hole.r);
 	//physics.addBalls(Vec3(0, -5, 12), 2, Vec3(0, 200, 0), 1);
 	//physics.addBalls(Vec3(0, 5, 12), 2, Vec3(0, -200, 0), 500);
@@ -40,7 +40,7 @@ int main() {
 		Vector3 p;
 		p = tracking.controller().getOrigin();
 		std::cout << p.x << "," << p.y << "," << p.z << std::endl;
-		render.drawBall({ p, 0.3f });
+		render.drawBall({ p, 0.02f });
 
 		for(int i=0;i<20;i++) physics.simulation();
 		window.refresh();

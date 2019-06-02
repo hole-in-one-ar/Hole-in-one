@@ -133,14 +133,14 @@ Render::Render(float w, float h)
 	glewInit();
 	buildObjects();
 	
-	float fovy = PI / 3;
+	float fovy = PI * 0.465; // ’†‚É—ˆ‚é: FOV‚ª‚Å‚©‚¢
 	float aspect = w / h;
 	float near = 0.01;
 	float far = 100.0;
 	float f = 1 / tan(fovy / 2);
 	P = {
 		f / aspect, 0, 0, 0,
-		0, -f, 0, 0,
+		0, f, 0, 0,
 		0, 0, (far + near) / (near - far), (2 * far * near) / (near - far),
 		0, 0, -1, 0
 	};

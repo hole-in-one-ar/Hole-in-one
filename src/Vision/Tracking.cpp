@@ -11,7 +11,6 @@ void Tracking::update() {
 	auto du = e - s;
 	std::cout << du / std::chrono::milliseconds(1) << "ms" << std::endl;
 
-
 	for (auto marker : vision.marker_list) {
 		if (marker.code == 0) {
 			// calibrator
