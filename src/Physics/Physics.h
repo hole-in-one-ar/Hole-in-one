@@ -30,7 +30,7 @@ private:
     //simulation stop value
     float maxZ = -10;
     //the enegry lost after collision
-    float lost = 0.8f;
+    float lost = 0.95f;
     //max move amount
     float moveAmount = 0.5f;
     //the min distance between ball and plane

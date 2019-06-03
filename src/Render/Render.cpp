@@ -223,7 +223,7 @@ void Render::buildModels(Mesh &planeModel, Mesh &ballModel, Mesh &holeSideModel)
 	for (int i = 0; i <= angle; i++) {
 		const float a = i * unitAngle;
 		verts.push_back({ cos(a), sin(a), 0 });
-		verts.push_back({ cos(a), sin(a), -10 });
+		verts.push_back({ cos(a), sin(a), -100 });
 	}
 	sendModelData(holeSideModel, verts);
 }
@@ -237,9 +237,11 @@ void Render::drawBall(BallPos b) {
 	ball.setParam("o", b.p);
 	ball.setParam("s", b.r);
 	ball.render();
+	glDepthMask(0);
 	ballShadow.setParam("o", Vector3{ b.p.x, b.p.y, 0.002f });
 	ballShadow.setParam("s", b.r);
 	ballShadow.render();
+	glDepthMask(1);
 }
 
 void Render::drawHole(HolePos h) {

@@ -41,9 +41,9 @@ void Physics::simulation() {
                     friction.z = -1 * thisForce.normalize().z * maxFriction;
                 }
             }
-            thisForce.x += friction.x;
-            thisForce.y += friction.y;
-            thisForce.z += friction.z;
+            //thisForce.x += friction.x;
+            //thisForce.y += friction.y;
+            //thisForce.z += friction.z;
             float deltaMass = timeStep * timeStep / mass;
 //            Vec3 moveTrace = Vec3(-thisBalls[i].getOrigin().x + lastBalls[i].getOrigin().x,
 //                                  -thisBalls[i].getOrigin().y + lastBalls[i].getOrigin().y,
@@ -71,7 +71,7 @@ void Physics::simulation() {
             if (thisBalls.size() > 1) {
                 Vec3 newVector;
                 bool isColli = false;
-                for (int j = 0; j < thisBalls.size(); j++) {
+                if(0) for (int j = 0; j < thisBalls.size(); j++) {
                     if (i != j) {
                         float originDis = distance(thisBalls[i].getOrigin(), thisBalls[j].getOrigin());
                         if (originDis <= thisBalls[i].getRadium() + thisBalls[j].getRadium()) {
