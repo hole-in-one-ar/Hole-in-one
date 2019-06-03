@@ -79,7 +79,7 @@ Shader Material::compileShader(GLuint type, Resource src) {
 		glGetShaderiv(s, GL_INFO_LOG_LENGTH, &len);
 		const unsigned int bufSize = 1024;
 		char buf[bufSize];
-		glGetProgramInfoLog(s, bufSize, &len, buf);
+		glGetShaderInfoLog(s, bufSize, &len, buf);
 		std::cerr << buf << std::endl;
 		throw std::runtime_error("Failed to compile shader");
 	}
@@ -99,7 +99,7 @@ Program Material::compileProgram(Shader vertex, Shader fragment) {
 		glGetProgramiv(p, GL_INFO_LOG_LENGTH, &len);
 		const unsigned int bufSize = 1024;
 		char buf[bufSize];
-		glGetShaderInfoLog(p, bufSize, &len, buf);
+		glGetProgramInfoLog(p, bufSize, &len, buf);
 		std::cerr << buf << std::endl;
 		throw std::runtime_error("Failed to link program");
 	}
