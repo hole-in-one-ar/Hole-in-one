@@ -7,14 +7,30 @@
 
 using Shader = GLuint;
 using Program = GLuint;
+using VAO = GLuint;
 using VBO = GLuint;
 using FileName = std::string;
 using Resource = std::string;
 using Uniform = std::string;
 using UniformLoc = GLuint;
 
-struct Mesh {
+class Texture {
+	bool initialized;
+	GLuint id;
+	unsigned int w, h;
+public:
+	Texture();
+	void set(Image);
+	GLuint use();
+};
+
+struct Model {
 	VBO vbo;
+	unsigned int vertexCount;
+};
+
+struct Mesh {
+	VAO vao;
 	unsigned int vertexCount;
 };
 
@@ -24,6 +40,7 @@ class Material {
 	Shader compileShader(GLuint type, Resource src);
 	Program compileProgram(Shader vertex, Shader fragment);
 	std::map<Uniform, UniformLoc> uniformLocation;
+	std::map<Uniform, GLuint>   paramI1;
 	std::map<Uniform, float>   paramV1;
 	std::map<Uniform, Vector2> paramV2;
 	std::map<Uniform, Vector3> paramV3;
@@ -32,6 +49,7 @@ class Material {
 public:
 	Material();
 	Material(Resource vs, Resource fs);
+	void setParam(Uniform name, Texture value);
 	void setParam(Uniform name, float value);
 	void setParam(Uniform name, Vector2 value);
 	void setParam(Uniform name, Vector3 value);
@@ -40,15 +58,19 @@ public:
 	void use();
 };
 
+struct DefaultUniform {
+	Vector3 C;
+	Transform V;
+	Matrix4 P;
+};
+
 class Object {
 	Mesh mesh;
 	Material mat;
-	Vector3 &C;
-	Transform &V;
-	Matrix4 &P;
+	DefaultUniform &uni;
 public:
-	Object(Vector3& C, Transform& V, Matrix4& P);
-	void build(Mesh mesh, Material mat);
+	Object(DefaultUniform &uni);
+	void build(Model model, Material mat);
 	template <class T> void setParam(Uniform name, T value) {
 		mat.setParam(name, value);
 	}
@@ -57,13 +79,12 @@ public:
 
 class Render {
 	float width, height;
-	Vector3 C;
-	Transform V;
-	Matrix4 P;
-	Object ball, hole, ground, holeSide, ballShadow;
+	DefaultUniform uni;
+	Texture bgTex;
+	Object background, ball, hole, ground, holeSide, ballShadow;
 	void buildObjects();
-	void buildModels(Mesh &planeModel, Mesh &ballModel, Mesh &holeSideModel);
-	void sendModelData(Mesh&, std::vector<Vector3>&);
+	void buildModels(Model &planeModel, Model &ballModel, Model &holeSideModel);
+	void sendModelData(Model&, std::vector<Vector3>&);
 public:
 	Render(float w, float h);
 	void setCamera(Transform);

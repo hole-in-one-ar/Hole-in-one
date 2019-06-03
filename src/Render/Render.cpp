@@ -4,6 +4,51 @@
 #include <fstream>
 #include <opencv2/opencv.hpp>
 
+// https://stackoverflow.com/questions/466204/rounding-up-to-next-power-of-2
+uint nextP2(uint x) {
+	x--;
+	x |= x >> 1;
+	x |= x >> 2;
+	x |= x >> 4;
+	x |= x >> 8;
+	x |= x >> 16;
+	x++;
+	return x;
+}
+
+Texture::Texture() : initialized(false), w(0), h(0) {}
+
+void Texture::set(Image img) {
+	if (!initialized) {
+		glGenTextures(1, &id);
+		glActiveTexture(GL_TEXTURE0);
+	}
+	glBindTexture(GL_TEXTURE_2D, id);
+	cv::Size p2Size(nextP2(img.cols), nextP2(img.rows));
+	//cv::resize(img, img, p2Size);
+	if (w == img.cols && h == img.rows) {
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, w, h, GL_BGR, GL_UNSIGNED_BYTE, img.data);
+	} else {
+		w = img.cols;
+		h = img.rows;
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_BGR, GL_UNSIGNED_BYTE, img.data);
+	}
+	if (!initialized) {
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		initialized = true;
+	}
+	glGenerateMipmap(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+GLuint Texture::use() {
+	glBindTexture(GL_TEXTURE_2D, id);
+	return 0;
+}
+
 Material::Material() {}
 
 std::string Material::loadFile(FileName fn) {
@@ -28,10 +73,10 @@ Shader Material::compileShader(GLuint type, Resource src) {
 	glCompileShader(s);
 
 	GLint res;
-	glGetProgramiv(s, GL_COMPILE_STATUS, &res);
+	glGetShaderiv(s, GL_COMPILE_STATUS, &res);
 	if (res == GL_FALSE) {
 		GLint len;
-		glGetProgramiv(s, GL_INFO_LOG_LENGTH, &len);
+		glGetShaderiv(s, GL_INFO_LOG_LENGTH, &len);
 		const unsigned int bufSize = 1024;
 		char buf[bufSize];
 		glGetProgramInfoLog(s, bufSize, &len, buf);
@@ -48,10 +93,10 @@ Program Material::compileProgram(Shader vertex, Shader fragment) {
 	glLinkProgram(p);
 
 	GLint res;
-	glGetShaderiv(p, GL_LINK_STATUS, &res);
+	glGetProgramiv(p, GL_LINK_STATUS, &res);
 	if (res == GL_FALSE) {
 		GLint len;
-		glGetShaderiv(p, GL_INFO_LOG_LENGTH, &len);
+		glGetProgramiv(p, GL_INFO_LOG_LENGTH, &len);
 		const unsigned int bufSize = 1024;
 		char buf[bufSize];
 		glGetShaderInfoLog(p, bufSize, &len, buf);
@@ -66,7 +111,6 @@ Material::Material(Resource vs, Resource fs) {
 	Shader f = compileShader(GL_FRAGMENT_SHADER, fs);
 	program = compileProgram(v, f);
 	glBindAttribLocation(program, 0, "vertex");
-	glEnableVertexAttribArray(0);
 }
 
 UniformLoc Material::uniformLoc(Uniform u) {
@@ -78,6 +122,9 @@ UniformLoc Material::uniformLoc(Uniform u) {
 	return it->second;
 }
 
+void Material::setParam(Uniform name, Texture v) {
+	paramI1[name] = v.use();
+}
 void Material::setParam(Uniform name, float v) {
 	paramV1[name] = v;
 }
@@ -96,6 +143,9 @@ void Material::setParam(Uniform name, Transform v) {
 
 void Material::use() {
 	glUseProgram(program);
+	for (auto p : paramI1) {
+		glUniform1i(uniformLoc(p.first), p.second);
+	}
 	for (auto p : paramV1) {
 		glUniform1f(uniformLoc(p.first), p.second);
 	}
@@ -108,28 +158,37 @@ void Material::use() {
 	for (auto p : paramM4) {
 		glUniformMatrix4fv(uniformLoc(p.first), 1, true, p.second.m);
 	}
-	glVertexAttribPointer(0,3,GL_FLOAT,false,0,0);
 }
 
-Object::Object(Vector3& C, Transform& V, Matrix4& P): C(C), V(V), P(P) {};
+Object::Object(DefaultUniform &uni) : uni(uni) {}
 
-void Object::build(Mesh me, Material ma) {
-	mesh = me;
+void Object::build(Model mo, Material ma) {
+	mesh.vertexCount = mo.vertexCount;
+	glGenVertexArrays(1, &mesh.vao);
+	glBindVertexArray(mesh.vao);
+
+	glBindBuffer(GL_ARRAY_BUFFER, mo.vbo);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0,3,GL_FLOAT,false,0,0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
 	mat = ma;
 }
 
 void Object::render() {
-	glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
-	mat.setParam("cameraPos", C);
-	mat.setParam("V", V);
-	mat.setParam("P", P);
+	glBindVertexArray(mesh.vao);
+	mat.setParam("cameraPos", uni.C);
+	mat.setParam("V", uni.V);
+	mat.setParam("P", uni.P);
 	mat.use();
 	glDrawArrays(GL_TRIANGLE_STRIP, 0, mesh.vertexCount);
+	glBindVertexArray(0);
 }
 
 Render::Render(float w, float h)
 	: width(w), height(h)
-	, ball(C, V, P), hole(C, V, P), ground(C, V, P), holeSide(C, V, P), ballShadow(C, V, P) {
+	, background(uni), ball(uni), hole(uni), ground(uni), holeSide(uni), ballShadow(uni) {
 	glewInit();
 	buildObjects();
 	
@@ -138,7 +197,7 @@ Render::Render(float w, float h)
 	float near = 0.01;
 	float far = 100.0;
 	float f = 1 / tan(fovy / 2);
-	P = {
+	uni.P = {
 		f / aspect, 0, 0, 0,
 		0, f, 0, 0,
 		0, 0, (far + near) / (near - far), (2 * far * near) / (near - far),
@@ -157,22 +216,30 @@ void Render::buildObjects() {
 	glEnable(GL_DEBUG_OUTPUT);
 	glDebugMessageCallback(errorCB,0);
 	
-	Mesh planeModel = { buffers[0], 0 };
-	Mesh ballModel = { buffers[1], 0 };
-	Mesh holeSideModel = { buffers[2], 0 };
+	Model planeModel = { buffers[0], 0 };
+	Model ballModel = { buffers[1], 0 };
+	Model holeSideModel = { buffers[2], 0 };
 	buildModels(planeModel, ballModel, holeSideModel);
 
+	Material backgroundMat("background.vert", "background.frag");
 	Material ballMat("default.vert", "ball.frag");
 	Material holeMat("default.vert", "hole.frag");
 	Material groundMat("default.vert", "ground.frag");
 	Material holeSideMat("default.vert", "holeSide.frag");
 	Material ballShadowMat("default.vert", "ballShadow.frag");
 
+	background.build(planeModel, backgroundMat);
 	ball.build(ballModel, ballMat);
 	hole.build(planeModel, holeMat);
 	ground.build(planeModel, groundMat);
 	holeSide.build(holeSideModel, holeSideMat);
 	ballShadow.build(planeModel, ballShadowMat);
+}
+
+void Render::sendModelData(Model &model, std::vector<Vector3> &verts) {
+	glBindBuffer(GL_ARRAY_BUFFER, model.vbo);
+	glBufferData(GL_ARRAY_BUFFER, verts.size() * sizeof(Vector3), verts.data(), GL_STATIC_DRAW);
+	model.vertexCount = verts.size();
 }
 
 Vector3 sphereCoord(float theta, float phi) { // latitude, longitude
@@ -183,13 +250,7 @@ Vector3 sphereCoord(float theta, float phi) { // latitude, longitude
 	};
 }
 
-void Render::sendModelData(Mesh &mesh, std::vector<Vector3> &verts) {
-	glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
-	glBufferData(GL_ARRAY_BUFFER, verts.size() * sizeof(Vector3), verts.data(), GL_STATIC_DRAW);
-	mesh.vertexCount = verts.size();
-}
-
-void Render::buildModels(Mesh &planeModel, Mesh &ballModel, Mesh &holeSideModel) {
+void Render::buildModels(Model &planeModel, Model &ballModel, Model &holeSideModel) {
 	std::vector<Vector3> verts;
 	
 	// planeModel
@@ -229,8 +290,8 @@ void Render::buildModels(Mesh &planeModel, Mesh &ballModel, Mesh &holeSideModel)
 }
 
 void Render::setCamera(Transform transform) {
-	C = transform.getViewOrigin();
-	V = transform;
+	uni.C = transform.getViewOrigin();
+	uni.V = transform;
 }
 
 void Render::drawBall(BallPos b) {
@@ -271,8 +332,8 @@ void Render::drawHole(HolePos h) {
 
 void Render::drawBackground(Image bg) {
 	glDepthMask(0);
-	Image resized;
-	cv::resize(bg, resized, cv::Size(width, height));
-	glDrawPixels(width, height, GL_BGR, GL_UNSIGNED_BYTE, resized.data);
+	bgTex.set(bg);
+	background.setParam("image", bgTex);
+	background.render();
 	glDepthMask(1);
 }
