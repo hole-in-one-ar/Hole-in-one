@@ -8,7 +8,7 @@ bool is_edge_point_drawn = false;
 bool is_stripe_drawn = false;
 bool is_peak_drawn = false;
 bool is_corrected_edge_drawn = false;
-bool is_corrected_corner_drawn = false;
+bool is_corrected_corner_drawn = true;
 bool is_marker_drawn = true;
 
 // Drawing Settings
@@ -119,7 +119,7 @@ bool Vision::isValidRect(Contour c) {
 
   const int image_size = img_marked.rows*img_marked.cols;
   const int marker_size_min = (int)(image_size*0.001);
-  const int marker_size_max = (int)(image_size*0.99);
+  const int marker_size_max = (int)(image_size*0.5);
   const int num_of_corners = 4;
   const bool is_valid = 
     (c.size() == num_of_corners) &&
@@ -164,6 +164,32 @@ int getMarkerCode(cv::Mat marker) {
   } else {
     return -1;
   }
+}
+
+int Vision::getRotation(cv::Mat img) {
+  //make rotation of detented marker 0°
+  if (img.at<uchar>(1, 4) == 0) {
+    return 0; //upper right
+  } else if (img.at<uchar>(4, 4) == 0) {
+    return 1; //lower right
+  } else if (img.at<uchar>(4, 1) == 0) {
+    return 2; //lower left
+  } else if (img.at<uchar>(1, 1) == 0) {
+    return 3; //upper right
+  }
+  return -1;
+}
+
+cv::Mat Vision::rotateMarker(cv::Mat src, int rot) {
+  cv::Mat dst;
+
+  //center of rotation
+  cv::Point2f center((src.cols-1)*0.5, (src.rows-1)*0.5);
+  //rotation matrix
+  cv::Mat matrot = cv::getRotationMatrix2D( center, (float)rot*90, 1.0);
+
+  cv::warpAffine(src, dst, matrot, src.size());
+  return dst;
 }
 
 void Vision::detectMarker() {
@@ -305,7 +331,7 @@ void Vision::detectMarker() {
       cv::Point2f preciseCorner(ans(0,0), ans(1,0));
       preciseCorners.push_back(preciseCorner);
       if (is_corrected_corner_drawn) {
-        cv::circle(img_marked, preciseCorner, 5, cv::Scalar(255, 0, 0), cv::FILLED);
+        cv::circle(img_marked, preciseCorner, i+1, cv::Scalar(255, 0, 0), cv::FILLED);
       }
     } //loop of each precise edge
 
@@ -330,6 +356,9 @@ void Vision::detectMarker() {
     cv::threshold(marker_gray, marker_filtered, mean[0], 255, cv::THRESH_BINARY);
     cv::resize(marker_filtered, img_marker, cv::Size(6, 6), 0, 0, cv::INTER_LINEAR);
     if(isValidMarker(img_marker)){
+      int rot = getRotation(img_marker);
+      std::cout << "rotation: " << rot << std::endl;
+      img_marker = rotateMarker(img_marker, rot);
       cv::resize(img_marker, marker_show, cv::Size(160, 160), 0, 0, cv::INTER_NEAREST);
       cv::imshow(debugWinName, marker_show);
       if (is_marker_drawn) {
@@ -339,32 +368,27 @@ void Vision::detectMarker() {
       }
       Marker marker;
       marker.code = getMarkerCode(img_marker);
-	  for (auto &c : preciseCorners) {
-		  std::cout << "(" << c.x << "," << c.y << ")";
-		  c.x -= 640;
-		  c.y -= 360;
-	  }
-	  std::cout << std::endl;
-      estimateSquarePose(marker.resultMatrix, &preciseCorners.front(), kMarkerLength);
-      //marker.print_matrix();
+      for (auto &c : preciseCorners) {
+        std::cout << "(" << c.x << "," << c.y << ")";
+        c.x -= 640;
+        c.y -= 360;
+      }
+      std::cout << std::endl;
+      Points orderedCorners;
+      for (int i = 0; i < preciseCorners.size(); i++) {
+        orderedCorners.push_back(preciseCorners[(i+rot) % preciseCorners.size()]);
+      }
+      estimateSquarePose(marker.resultMatrix, &orderedCorners.front(), kMarkerLength);
       marker_list.push_back(marker);
     }
   } //loop of each contour
 }
 
-void Vision::execCalibration() {
-  //finding calibration marker 
-  //set a camera position
-  
-}
-
-void Vision::execGame() {
-
-}
 
 Vision::Vision() {
   std::cout << "Startup (Press ESC to quit)" << std::endl;
 	cv::namedWindow(debugWinName, cv::WINDOW_AUTOSIZE);
+	cv::namedWindow("hogehoge", cv::WINDOW_AUTOSIZE);
   initVideoStream(cap);
 }
 

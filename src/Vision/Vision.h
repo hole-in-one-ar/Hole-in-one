@@ -43,8 +43,8 @@ private:
   cv::Point2f findPeakByFitting(cv::Mat img);
   bool isValidRect(Contour c);
   bool isValidMarker(cv::Mat img);
-  void execCalibration();
-  void execGame();
+  int getRotation(cv::Mat img);
+  cv::Mat rotateMarker(cv::Mat img, int rot);
 public:
   Vision();
   cv::Mat img_camera;
