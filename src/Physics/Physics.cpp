@@ -59,7 +59,7 @@ void Physics::simulation() {
 //                cout << "hit the ground!" << endl;
                 if (!isBallInsideHole(i)) {
 //                    cout << "outside hole" << endl;
-                    moveVector = Vec3(moveVector.x * lost, moveVector.y * lost, -moveVector.z * lost);
+                    moveVector = Vec3(moveVector.x, moveVector.y, -moveVector.z * lost);
                 }
             }
         }
@@ -71,25 +71,35 @@ void Physics::simulation() {
             if (thisBalls.size() > 1) {
                 Vec3 newVector;
                 bool isColli = false;
+                float minDis = INT64_MAX;
+                int minIndex = i;
                 for (int j = 0; j < thisBalls.size(); j++) {
                     if (i != j) {
                         float originDis = distance(thisBalls[i].getOrigin(), thisBalls[j].getOrigin());
+
                         if (originDis <= thisBalls[i].getRadium() + thisBalls[j].getRadium()) {
-                            cout << "ouch!" << endl;
+//                            cout << "ouch!" << endl;
+                            if (originDis < minDis) {
+                                minDis = originDis;
+                                minIndex = j;
+                            }
                             isColli = true;
-                            newVector.x += ((thisBalls[i].getMass() - thisBalls[j].getMass()) * beforeVector[i].x +
-                                            2 * thisBalls[j].getMass() * beforeVector[j].x) /
-                                           (thisBalls[i].getMass() + thisBalls[j].getMass());
-                            newVector.y += ((thisBalls[i].getMass() - thisBalls[j].getMass()) * beforeVector[i].y +
-                                            2 * thisBalls[j].getMass() * beforeVector[j].y) /
-                                           (thisBalls[i].getMass() + thisBalls[j].getMass());
-                            newVector.z += ((thisBalls[i].getMass() - thisBalls[j].getMass()) * beforeVector[i].z +
-                                            2 * thisBalls[j].getMass() * beforeVector[j].z) /
-                                           (thisBalls[i].getMass() + thisBalls[j].getMass());
                         }
                     }
                 }
-                if (isColli) { moveVector = newVector; }
+                if (isColli) {
+                    int j = minIndex;
+                    newVector.x = ((thisBalls[i].getMass() - thisBalls[j].getMass()) * beforeVector[i].x +
+                                   2 * thisBalls[j].getMass() * beforeVector[j].x) /
+                                  (thisBalls[i].getMass() + thisBalls[j].getMass());
+                    newVector.y = ((thisBalls[i].getMass() - thisBalls[j].getMass()) * beforeVector[i].y +
+                                   2 * thisBalls[j].getMass() * beforeVector[j].y) /
+                                  (thisBalls[i].getMass() + thisBalls[j].getMass());
+                    newVector.z = ((thisBalls[i].getMass() - thisBalls[j].getMass()) * beforeVector[i].z +
+                                   2 * thisBalls[j].getMass() * beforeVector[j].z) /
+                                  (thisBalls[i].getMass() + thisBalls[j].getMass());
+                    moveVector = newVector;
+                }
             }
             float thisZ = thisBalls[i].getOrigin().z + moveVector.z;
             Vec3 newOrigin = Vec3(thisBalls[i].getOrigin().x + moveVector.x, thisBalls[i].getOrigin().y + moveVector.y,
@@ -161,4 +171,24 @@ void Physics::setMaxZ(float maxZ) {
 
 void Physics::setLost(float lost) {
     Physics::lost = lost;
+}
+
+void Physics::removeBall(int num) {
+    vector<PhysicsBall>::iterator it;
+    int i = 0;
+    for (it = thisBalls.begin(); it != thisBalls.end();) {
+        if (i == num) { it = thisBalls.erase(it); }
+        else {
+            ++it;
+            ++i;
+        }
+    }
+    i = 0;
+    for (it = lastBalls.begin(); it != lastBalls.end();) {
+        if (i == num) { it = lastBalls.erase(it); }
+        else {
+            ++it;
+            ++i;
+        }
+    }
 }
