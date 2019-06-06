@@ -298,14 +298,17 @@ void Render::drawBall(BallPos b) {
 	ball.setParam("o", b.p);
 	ball.setParam("s", b.r);
 	ball.render();
-	glDepthMask(0);
-	ballShadow.setParam("o", Vector3{ b.p.x, b.p.y, 0.002f });
-	ballShadow.setParam("s", b.r);
-	ballShadow.render();
-	glDepthMask(1);
+	if (b.p.z > b.r) {
+		glDepthMask(0);
+		ballShadow.setParam("o", Vector3{ b.p.x, b.p.y, 0.002f });
+		ballShadow.setParam("s", b.r);
+		ballShadow.render();
+		glDepthMask(1);
+	}
 }
 
 void Render::drawHole(HolePos h) {
+	float r = h.r * 0.75f;
 	Vector3 o { h.p.x, h.p.y, 0 };
 	// Writing Stencil
 	glStencilFunc(GL_ALWAYS, 1, 1);
@@ -313,7 +316,7 @@ void Render::drawHole(HolePos h) {
 	glColorMask(0, 0, 0, 0);
 	glDepthMask(0);
 	hole.setParam("o", o);
-	hole.setParam("s", h.r);
+	hole.setParam("s", r);
 	hole.render();
 	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 	glDepthMask(1);
@@ -326,7 +329,7 @@ void Render::drawHole(HolePos h) {
 	glColorMask(1, 1, 1, 1);
 
 	holeSide.setParam("o", o);
-	holeSide.setParam("s", h.r);
+	holeSide.setParam("s", r);
 	holeSide.render();
 }
 

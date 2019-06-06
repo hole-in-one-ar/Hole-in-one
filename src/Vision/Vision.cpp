@@ -368,12 +368,11 @@ void Vision::detectMarker() {
       }
       Marker marker;
       marker.code = getMarkerCode(img_marker);
+      // Move to center
       for (auto &c : preciseCorners) {
-        std::cout << "(" << c.x << "," << c.y << ")";
         c.x -= 640;
         c.y -= 360;
       }
-      std::cout << std::endl;
       Points orderedCorners;
       for (int i = 0; i < preciseCorners.size(); i++) {
         orderedCorners.push_back(preciseCorners[(i+rot) % preciseCorners.size()]);
@@ -388,7 +387,6 @@ void Vision::detectMarker() {
 Vision::Vision() {
   std::cout << "Startup (Press ESC to quit)" << std::endl;
 	cv::namedWindow(debugWinName, cv::WINDOW_AUTOSIZE);
-	cv::namedWindow("hogehoge", cv::WINDOW_AUTOSIZE);
   initVideoStream(cap);
 }
 
