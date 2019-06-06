@@ -138,6 +138,8 @@ public:
     Others:         use it to render the balls
     *************************************************/
     const vector<PhysicsBall> &getBalls() const;
+
+    void removeBall(int num);
 };
 
 
