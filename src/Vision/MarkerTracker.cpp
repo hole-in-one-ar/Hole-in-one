@@ -119,7 +119,7 @@ void MarkerTracker::findMarker( cv::Mat &image_bgr, std::vector<Marker> &markers
 	ContourHierarchy hierarchy;
 	cv::findContours(image_gray_filtered, contours, hierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);
 
-	for each (auto contour in contours)
+	for (auto contour : contours)
 	{
 		// Approximate a contour
 		const auto kEpsilon = 0.05*cv::arcLength(contour, true);
@@ -440,16 +440,16 @@ void MarkerTracker::findMarker( cv::Mat &image_bgr, std::vector<Marker> &markers
 			int col = i % 4;
 
 			codes[0] <<= 1;
-			codes[0] |= cP[row][col]; // 0‹
+			codes[0] |= cP[row][col]; // 0ï¿½ï¿½
 
 			codes[1] <<= 1;
-			codes[1] |= cP[3 - col][row]; // 90‹
+			codes[1] |= cP[3 - col][row]; // 90ï¿½ï¿½
 
 			codes[2] <<= 1;
-			codes[2] |= cP[3 - row][3 - col]; // 180‹
+			codes[2] |= cP[3 - row][3 - col]; // 180ï¿½ï¿½
 
 			codes[3] <<= 1;
-			codes[3] |= cP[col][3 - row]; // 270‹
+			codes[3] |= cP[col][3 - row]; // 270ï¿½ï¿½
 		}
 
 		if ((codes[0] == 0) || (codes[0] == 0xffff)) {

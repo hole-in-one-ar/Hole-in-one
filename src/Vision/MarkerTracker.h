@@ -53,7 +53,7 @@ public:
 	~MarkerTracker(){
 		cleanup();
 	}
-	void MarkerTracker::findMarker( cv::Mat &img_bgr, std::vector<Marker> &markers );
+	void findMarker( cv::Mat &img_bgr, std::vector<Marker> &markers );
 //	void findMarker( cv::Mat &img_bgr, float resultMatrix[16] );
 protected:
 	void init( );
