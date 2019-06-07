@@ -177,7 +177,7 @@ void Physics::removeBall(int num) {
     vector<PhysicsBall>::iterator it;
     int i = 0;
     for (it = thisBalls.begin(); it != thisBalls.end();) {
-        if (i == num) { it = thisBalls.erase(it); }
+		if (i == num) { it = thisBalls.erase(it); break; }
         else {
             ++it;
             ++i;
@@ -185,7 +185,7 @@ void Physics::removeBall(int num) {
     }
     i = 0;
     for (it = lastBalls.begin(); it != lastBalls.end();) {
-        if (i == num) { it = lastBalls.erase(it); }
+		if (i == num) { it = lastBalls.erase(it); break;  }
         else {
             ++it;
             ++i;

@@ -16,12 +16,18 @@ uint nextP2(uint x) {
 	return x;
 }
 
-Texture::Texture() : initialized(false), w(0), h(0) {}
+GLuint textureIndex = 0;
+
+Texture::Texture() : initialized(false), w(0), h(0) {
+	index = textureIndex;
+	textureIndex++;
+	std::cout << "make texture " << textureIndex << std::endl;
+}
 
 void Texture::set(Image img) {
 	if (!initialized) {
 		glGenTextures(1, &id);
-		glActiveTexture(GL_TEXTURE0);
+		glActiveTexture(GL_TEXTURE0 + index);
 	}
 	glBindTexture(GL_TEXTURE_2D, id);
 	cv::Size p2Size(nextP2(img.cols), nextP2(img.rows));
@@ -37,7 +43,7 @@ void Texture::set(Image img) {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		initialized = true;
 	}
 	glGenerateMipmap(GL_TEXTURE_2D);
@@ -46,7 +52,7 @@ void Texture::set(Image img) {
 
 GLuint Texture::use() {
 	glBindTexture(GL_TEXTURE_2D, id);
-	return 0;
+	return index;
 }
 
 Material::Material() {}
@@ -188,7 +194,7 @@ void Object::render() {
 
 Render::Render(float w, float h)
 	: width(w), height(h)
-	, background(uni), ball(uni), hole(uni), ground(uni), holeSide(uni), ballShadow(uni) {
+	, background(uni), ball(uni), hole(uni), ground(uni), holeSide(uni), ballShadow(uni), shooter(uni) {
 	glewInit();
 	buildObjects();
 	
@@ -210,8 +216,8 @@ void GLAPIENTRY errorCB( GLenum source, GLenum type, GLuint id, GLenum severity,
 }
 
 void Render::buildObjects() {
-	VBO buffers[3];
-	glGenBuffers(3, buffers);
+	VBO buffers[4];
+	glGenBuffers(4, buffers);
 
 	glEnable(GL_DEBUG_OUTPUT);
 	glDebugMessageCallback(errorCB,0);
@@ -219,7 +225,8 @@ void Render::buildObjects() {
 	Model planeModel = { buffers[0], 0 };
 	Model ballModel = { buffers[1], 0 };
 	Model holeSideModel = { buffers[2], 0 };
-	buildModels(planeModel, ballModel, holeSideModel);
+	Model shooterModel = { buffers[3], 0 };
+	buildModels(planeModel, ballModel, holeSideModel, shooterModel);
 
 	Material backgroundMat("background.vert", "background.frag");
 	Material ballMat("default.vert", "ball.frag");
@@ -227,6 +234,7 @@ void Render::buildObjects() {
 	Material groundMat("default.vert", "ground.frag");
 	Material holeSideMat("default.vert", "holeSide.frag");
 	Material ballShadowMat("default.vert", "ballShadow.frag");
+	Material shooterMat("shooter.vert", "shooter.frag");
 
 	background.build(planeModel, backgroundMat);
 	ball.build(ballModel, ballMat);
@@ -234,6 +242,7 @@ void Render::buildObjects() {
 	ground.build(planeModel, groundMat);
 	holeSide.build(holeSideModel, holeSideMat);
 	ballShadow.build(planeModel, ballShadowMat);
+	shooter.build(shooterModel, shooterMat);
 }
 
 void Render::sendModelData(Model &model, std::vector<Vector3> &verts) {
@@ -250,7 +259,7 @@ Vector3 sphereCoord(float theta, float phi) { // latitude, longitude
 	};
 }
 
-void Render::buildModels(Model &planeModel, Model &ballModel, Model &holeSideModel) {
+void Render::buildModels(Model &planeModel, Model &ballModel, Model &holeSideModel, Model &shooterModel) {
 	std::vector<Vector3> verts;
 	
 	// planeModel
@@ -287,6 +296,22 @@ void Render::buildModels(Model &planeModel, Model &ballModel, Model &holeSideMod
 		verts.push_back({ cos(a), sin(a), -100 });
 	}
 	sendModelData(holeSideModel, verts);
+	// shooterModel
+	verts.clear();
+	const float r = 1.5;
+	for (int i = 0; i <= angle; i++) {
+		const float a = i * unitAngle;
+		verts.push_back({ cos(a), sin(a), -1.0 });
+		verts.push_back({ cos(a) * r, sin(a) * r, 1.0 });
+	}
+	verts.push_back({ r, 0, 1.0 });
+	verts.push_back({ 0, 0, -1.0 });
+	for (int i = 0; i <= angle; i++) {
+		const float a = i * unitAngle;
+		verts.push_back({ 0, 0, -1.0 });
+		verts.push_back({ cos(a), sin(a), -1.0 });
+	}
+	sendModelData(shooterModel, verts);
 }
 
 void Render::setCamera(Transform transform) {
@@ -294,14 +319,19 @@ void Render::setCamera(Transform transform) {
 	uni.V = transform;
 }
 
-void Render::drawBall(BallPos b) {
+void Render::drawBall(BallPos b, HolePos h) {
 	ball.setParam("o", b.p);
 	ball.setParam("s", b.r);
+	ball.setParam("image", bgTex);
 	ball.render();
-	if (b.p.z > b.r) {
+	if (b.p.z > 0) {
 		glDepthMask(0);
 		ballShadow.setParam("o", Vector3{ b.p.x, b.p.y, 0.002f });
-		ballShadow.setParam("s", b.r);
+		ballShadow.setParam("s", b.r*2);
+		ballShadow.setParam("b", b.p);
+		ballShadow.setParam("r", b.r);
+		ballShadow.setParam("h", h.p);
+		ballShadow.setParam("hr", h.r * 0.75f);
 		ballShadow.render();
 		glDepthMask(1);
 	}
@@ -330,7 +360,16 @@ void Render::drawHole(HolePos h) {
 
 	holeSide.setParam("o", o);
 	holeSide.setParam("s", r);
+	holeSide.setParam("image", bgTex);
 	holeSide.render();
+}
+
+void Render::drawShooter(Vector3 origin, Vector3 normal, float scale) {
+	shooter.setParam("o", origin);
+	shooter.setParam("n", normal);
+	shooter.setParam("s", scale);
+	shooter.setParam("image", bgTex);
+	shooter.render();
 }
 
 void Render::drawBackground(Image bg) {

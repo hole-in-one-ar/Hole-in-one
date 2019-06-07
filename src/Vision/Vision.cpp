@@ -357,7 +357,7 @@ void Vision::detectMarker() {
     cv::resize(marker_filtered, img_marker, cv::Size(6, 6), 0, 0, cv::INTER_LINEAR);
     if(isValidMarker(img_marker)){
       int rot = getRotation(img_marker);
-      std::cout << "rotation: " << rot << std::endl;
+      //std::cout << "rotation: " << rot << std::endl;
       img_marker = rotateMarker(img_marker, rot);
       cv::resize(img_marker, marker_show, cv::Size(160, 160), 0, 0, cv::INTER_NEAREST);
       cv::imshow(debugWinName, marker_show);

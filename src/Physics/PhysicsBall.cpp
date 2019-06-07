@@ -4,7 +4,6 @@ PhysicsBall::PhysicsBall() {
     origin = Vec3();
     radium = 1;
     velocity = Vec3();
-
 }
 
 PhysicsBall::PhysicsBall(const Vec3 &originIn, const float &rIn, const Vec3 &velo, const float &massIn) {

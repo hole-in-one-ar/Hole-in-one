@@ -17,6 +17,7 @@ using UniformLoc = GLuint;
 class Texture {
 	bool initialized;
 	GLuint id;
+	GLuint index;
 	unsigned int w, h;
 public:
 	Texture();
@@ -81,14 +82,15 @@ class Render {
 	float width, height;
 	DefaultUniform uni;
 	Texture bgTex;
-	Object background, ball, hole, ground, holeSide, ballShadow;
+	Object background, ball, hole, ground, holeSide, ballShadow, shooter;
 	void buildObjects();
-	void buildModels(Model &planeModel, Model &ballModel, Model &holeSideModel);
+	void buildModels(Model &planeModel, Model &ballModel, Model &holeSideModel, Model &shooterModel);
 	void sendModelData(Model&, std::vector<Vector3>&);
 public:
 	Render(float w, float h);
 	void setCamera(Transform);
-	void drawBall(BallPos);
+	void drawBall(BallPos, HolePos);
 	void drawHole(HolePos);
 	void drawBackground(Image);
+	void drawShooter(Vector3, Vector3, float);
 };
