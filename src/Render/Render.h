@@ -41,7 +41,7 @@ class Material {
 	Shader compileShader(GLuint type, Resource src);
 	Program compileProgram(Shader vertex, Shader fragment);
 	std::map<Uniform, UniformLoc> uniformLocation;
-	std::map<Uniform, GLuint>   paramI1;
+	std::map<Uniform, uint>    paramI1;
 	std::map<Uniform, float>   paramV1;
 	std::map<Uniform, Vector2> paramV2;
 	std::map<Uniform, Vector3> paramV3;
@@ -51,6 +51,7 @@ public:
 	Material();
 	Material(Resource vs, Resource fs);
 	void setParam(Uniform name, Texture value);
+	void setParam(Uniform name, uint value);
 	void setParam(Uniform name, float value);
 	void setParam(Uniform name, Vector2 value);
 	void setParam(Uniform name, Vector3 value);
@@ -81,10 +82,10 @@ public:
 class Render {
 	float width, height;
 	DefaultUniform uni;
-	Texture bgTex;
-	Object background, ball, hole, ground, holeSide, ballShadow, shooter;
+	Texture bgTex, digitTex;
+	Object background, ball, hole, ground, holeSide, ballShadow, shooter, text, particle;
 	void buildObjects();
-	void buildModels(Model &planeModel, Model &ballModel, Model &holeSideModel, Model &shooterModel);
+	void buildModels(Model &planeModel, Model &ballModel, Model &holeSideModel, Model &shooterModel, Model &particleModel);
 	void sendModelData(Model&, std::vector<Vector3>&);
 public:
 	Render(float w, float h);
@@ -93,4 +94,6 @@ public:
 	void drawHole(HolePos);
 	void drawBackground(Image);
 	void drawShooter(Vector3, Vector3, float);
+	void drawScore(Vector3, float, float, float, float, uint);
+	void drawParticle(Vector3, float, float, uint);
 };

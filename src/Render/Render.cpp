@@ -20,15 +20,15 @@ GLuint textureIndex = 0;
 
 Texture::Texture() : initialized(false), w(0), h(0) {
 	index = textureIndex;
-	textureIndex++;
 	std::cout << "make texture " << textureIndex << std::endl;
+	textureIndex++;
 }
 
 void Texture::set(Image img) {
 	if (!initialized) {
 		glGenTextures(1, &id);
-		glActiveTexture(GL_TEXTURE0 + index);
 	}
+	glActiveTexture(GL_TEXTURE0 + index);
 	glBindTexture(GL_TEXTURE_2D, id);
 	cv::Size p2Size(nextP2(img.cols), nextP2(img.rows));
 	//cv::resize(img, img, p2Size);
@@ -51,6 +51,7 @@ void Texture::set(Image img) {
 }
 
 GLuint Texture::use() {
+	glActiveTexture(GL_TEXTURE0 + index);
 	glBindTexture(GL_TEXTURE_2D, id);
 	return index;
 }
@@ -131,6 +132,9 @@ UniformLoc Material::uniformLoc(Uniform u) {
 void Material::setParam(Uniform name, Texture v) {
 	paramI1[name] = v.use();
 }
+void Material::setParam(Uniform name, uint v) {
+	paramI1[name] = v;
+}
 void Material::setParam(Uniform name, float v) {
 	paramV1[name] = v;
 }
@@ -194,7 +198,7 @@ void Object::render() {
 
 Render::Render(float w, float h)
 	: width(w), height(h)
-	, background(uni), ball(uni), hole(uni), ground(uni), holeSide(uni), ballShadow(uni), shooter(uni) {
+	, background(uni), ball(uni), hole(uni), ground(uni), holeSide(uni), ballShadow(uni), shooter(uni), text(uni), particle(uni) {
 	glewInit();
 	buildObjects();
 	
@@ -216,8 +220,8 @@ void GLAPIENTRY errorCB( GLenum source, GLenum type, GLuint id, GLenum severity,
 }
 
 void Render::buildObjects() {
-	VBO buffers[4];
-	glGenBuffers(4, buffers);
+	VBO buffers[5];
+	glGenBuffers(5, buffers);
 
 	glEnable(GL_DEBUG_OUTPUT);
 	glDebugMessageCallback(errorCB,0);
@@ -226,7 +230,8 @@ void Render::buildObjects() {
 	Model ballModel = { buffers[1], 0 };
 	Model holeSideModel = { buffers[2], 0 };
 	Model shooterModel = { buffers[3], 0 };
-	buildModels(planeModel, ballModel, holeSideModel, shooterModel);
+	Model particleModel = { buffers[4], 0 };
+	buildModels(planeModel, ballModel, holeSideModel, shooterModel, particleModel);
 
 	Material backgroundMat("background.vert", "background.frag");
 	Material ballMat("default.vert", "ball.frag");
@@ -235,6 +240,8 @@ void Render::buildObjects() {
 	Material holeSideMat("default.vert", "holeSide.frag");
 	Material ballShadowMat("default.vert", "ballShadow.frag");
 	Material shooterMat("shooter.vert", "shooter.frag");
+	Material textMat("text.vert", "text.frag");
+	Material particleMat("particle.vert", "particle.frag");
 
 	background.build(planeModel, backgroundMat);
 	ball.build(ballModel, ballMat);
@@ -243,6 +250,10 @@ void Render::buildObjects() {
 	holeSide.build(holeSideModel, holeSideMat);
 	ballShadow.build(planeModel, ballShadowMat);
 	shooter.build(shooterModel, shooterMat);
+	text.build(planeModel, textMat);
+	particle.build(particleModel, particleMat);
+
+	digitTex.set(cv::imread("../res/digit.png"));
 }
 
 void Render::sendModelData(Model &model, std::vector<Vector3> &verts) {
@@ -259,7 +270,7 @@ Vector3 sphereCoord(float theta, float phi) { // latitude, longitude
 	};
 }
 
-void Render::buildModels(Model &planeModel, Model &ballModel, Model &holeSideModel, Model &shooterModel) {
+void Render::buildModels(Model &planeModel, Model &ballModel, Model &holeSideModel, Model &shooterModel, Model &particleModel) {
 	std::vector<Vector3> verts;
 	
 	// planeModel
@@ -312,6 +323,18 @@ void Render::buildModels(Model &planeModel, Model &ballModel, Model &holeSideMod
 		verts.push_back({ cos(a), sin(a), -1.0 });
 	}
 	sendModelData(shooterModel, verts);
+	// particleModel
+	verts.clear();
+	for (int i = 0; i < 30; i++) {
+		float x = i * 2;
+		verts.push_back({ x - 0.5f, -0.5f, 0 });
+		verts.push_back({ x - 0.5f, -0.5f, 0 });
+		verts.push_back({ x + 0.5f, -0.5f, 0 });
+		verts.push_back({ x - 0.5f, +0.5f, 0 });
+		verts.push_back({ x + 0.5f, +0.5f, 0 });
+		verts.push_back({ x + 0.5f, +0.5f, 0 });
+	}
+	sendModelData(particleModel, verts);
 }
 
 void Render::setCamera(Transform transform) {
@@ -353,7 +376,7 @@ void Render::drawHole(HolePos h) {
 	// Check Stencil
 	glStencilFunc(GL_NOTEQUAL, 1, 1);
 	ground.setParam("o", Vector3{ 0, 0, 0.001f });
-	ground.setParam("s", 1000);
+	ground.setParam("s", 1000.f);
 	ground.render();
 	glStencilFunc(GL_ALWAYS, 0, 1);
 	glColorMask(1, 1, 1, 1);
@@ -377,5 +400,30 @@ void Render::drawBackground(Image bg) {
 	bgTex.set(bg);
 	background.setParam("image", bgTex);
 	background.render();
+	glDepthMask(1);
+}
+
+void Render::drawScore(Vector3 origin, float scale, float diffAngle, float thickness, float color, uint value) {
+	glDepthMask(0);
+	text.setParam("o", origin);
+	text.setParam("s", scale);
+	text.setParam("diffAngle", diffAngle);
+	text.setParam("thickness", thickness);
+	text.setParam("color", color);
+	text.setParam("value", value);
+	text.setParam("digit", digitTex);
+	text.render();
+	glDepthMask(1);
+}
+
+void Render::drawParticle(Vector3 origin, float scale, float time, uint seed) {
+	glDepthMask(0);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+	particle.setParam("o", origin);
+	particle.setParam("s", scale);
+	particle.setParam("time", time);
+	particle.setParam("seed", seed);
+	particle.render();
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDepthMask(1);
 }

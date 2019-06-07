@@ -9,7 +9,7 @@ void Tracking::update() {
 	vision.detectMarker();
 	auto e = std::chrono::high_resolution_clock::now();
 	auto du = e - s;
-	//std::cout << du / std::chrono::milliseconds(1) << "ms" << std::endl;
+	std::cout << du / std::chrono::milliseconds(1) << "ms" << std::endl;
 	
 	if(aliveCount > 0) aliveCount--;
 	for (auto marker : vision.marker_list) {
