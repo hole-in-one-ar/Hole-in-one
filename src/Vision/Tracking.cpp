@@ -24,8 +24,14 @@ void Tracking::update() {
 			}
 		} else {
 			// controller
-			for (int i = 0; i < 16; i++) {
-				controllerM.m[i] = marker.resultMatrix[i];
+			if (aliveController()) {
+				for (int i = 0; i < 16; i++) {
+					controllerM.m[i] = marker.resultMatrix[i] * 0.4 + controllerM.m[i] * 0.6;
+				}
+			} else {
+				for (int i = 0; i < 16; i++) {
+					controllerM.m[i] = marker.resultMatrix[i];
+				}
 			}
 			relativeController = controllerM.transfer(cameraMatrixInv);
 			aliveCount = 10;
