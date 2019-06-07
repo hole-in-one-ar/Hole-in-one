@@ -16,13 +16,13 @@ void main(void) {
 	vec3 n = normalize(localPos);
 	vec3 viewDir = normalize(worldPos - cameraPos);
 	vec3 c = vec3(1,0,0);
-	// Diffuse
-	c *= mix(mix(sampleSky(n, 8), sampleSky(n, 6), 0.25), vec3(1.0), 0.2);
 	// Rim
 	vec3 refl = reflect(viewDir, n);
-	c += smoothstep(0.0, 1.0, sampleSky(refl, 6)) * 0.1 * (1 - pow(max(0, dot(viewDir, -n)), 2.0));
-	// AO
-	c *= 0.6+0.4*n.z;
+	c += smoothstep(0.0, 1.0, sampleSky(refl, 0)) * 0.3 * (1 - pow(max(0, dot(viewDir, -n)), 1.3));
+	// Diffuse
+	c *= mix(mix(sampleSky(n, 8), sampleSky(n, 6), 0.25), vec3(1.0), 0.2);
+	// Shadow
+	c *= 0.8+0.2*n.z;
 
 	c = pow(c, vec3(1/2.2));
 	gl_FragColor = vec4(c,1);

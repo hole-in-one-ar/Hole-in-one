@@ -18,6 +18,7 @@ void main(void) {
 	vec3 viewDir = normalize(worldPos - cameraPos);
 	vec3 n = normalize(normal);
 	vec3 c = vec3(0.5,1,0);
+	c.r *= smoothstep(0.9, 0.8, localPos.z) * 0.3 + 0.7;
 	// Diffuse
 	c *= mix(mix(sampleSky(n, 8), sampleSky(n, 6), 0.25), vec3(1.0), 0.2);
 	// Rim
@@ -25,6 +26,7 @@ void main(void) {
 	c += smoothstep(0.0, 1.0, sampleSky(refl, 6)) * 0.1 * (1 - pow(max(0, dot(viewDir, -n)), 2.0));
 	// AO
 	c *= pow(ao, 0.5) * .5 + .5;
+	c.r *= smoothstep(0.3, 1.0, ao) * 0.3 + 0.7;
 
 	c = pow(c, vec3(1/2.2));
 	gl_FragColor = vec4(c,1);
