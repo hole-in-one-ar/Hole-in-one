@@ -198,7 +198,7 @@ void Object::render() {
 
 Render::Render(float w, float h)
 	: width(w), height(h)
-	, background(uni), ball(uni), hole(uni), ground(uni), holeSide(uni), ballShadow(uni), shooter(uni), text(uni), particle(uni) {
+	, background(uni), ball(uni), hole(uni), ground(uni), holeSide(uni), ballShadow(uni), shooter(uni), text(uni), particle(uni), ring(uni), arrow(uni) {
 	glewInit();
 	buildObjects();
 	
@@ -242,6 +242,8 @@ void Render::buildObjects() {
 	Material shooterMat("shooter.vert", "shooter.frag");
 	Material textMat("text.vert", "text.frag");
 	Material particleMat("particle.vert", "particle.frag");
+	Material ringMat("default.vert", "ring.frag");
+	Material arrowMat("arrow.vert", "arrow.frag");
 
 	background.build(planeModel, backgroundMat);
 	ball.build(ballModel, ballMat);
@@ -252,6 +254,8 @@ void Render::buildObjects() {
 	shooter.build(shooterModel, shooterMat);
 	text.build(planeModel, textMat);
 	particle.build(particleModel, particleMat);
+	ring.build(planeModel, ringMat);
+	arrow.build(planeModel, arrowMat);
 
 	digitTex.set(cv::imread("../res/digit.png"));
 }
@@ -427,3 +431,22 @@ void Render::drawParticle(Vector3 origin, float scale, float time, uint seed) {
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDepthMask(1);
 }
+
+void Render::drawRing(Vector2 origin, float i, float o) {
+	glDepthMask(0);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+	ring.setParam("o", Vector3{ origin.x, origin.y, 0.002f } );
+	ring.setParam("s", o);
+	ring.setParam("i", i/o);
+	ring.render();
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDepthMask(1);
+}
+
+void Render::drawArrow(Vector3 origin, float s, float a) {
+	arrow.setParam("o", origin);
+	arrow.setParam("s", s);
+	arrow.setParam("a", a);
+	arrow.render();
+}
+

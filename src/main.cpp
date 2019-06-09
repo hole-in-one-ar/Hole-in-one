@@ -14,6 +14,7 @@ struct Effect {
 	Vector3 position;
 	unsigned int score;
 	float time;
+	Vector2 hole;
 };
 
 float eb(float x) {
@@ -49,12 +50,17 @@ int main() {
 	std::random_device rd;
 	std::mt19937 random(rd());
 	std::uniform_real_distribution<float> uniform;
+	float arrowTime = 0;
+	float arrowWait = -1;
 	unsigned int score = 0;
 	auto addScore = [&]() {
 		score++;
 		if (score % 5 == 0) {
 			physics.setHole(-1000, -1000, hole.r);
 			holeWaiting = 0;
+		}
+		if (score == 1) {
+			arrowWait = 0;
 		}
 	};
 	while (window.alive()) {
@@ -79,6 +85,13 @@ int main() {
 				physics.setHole(hole.p.x, hole.p.y, hole.r);
 				holeWaiting = -1;
 			}
+		}
+		if (arrowWait < 1.0) {
+			//arrowTime += 0.2;
+			if(arrowWait > -0.5) arrowWait += 0.1f;
+			float t = arrowWait < 0.f ? 0 : arrowWait;
+			float move = 1. - eb(1. - t);
+			render.drawArrow({ 0, 0, 0.04f - 0.2f * move }, 0.05f, arrowTime);
 		}
 		// Shooter
 		if (tracking.aliveController()) {
@@ -109,7 +122,7 @@ int main() {
 				removeIndices.push_back(ix);
 				if (p.z < 0.0) {
 					addScore();
-					effects.push_back({ {p.x,p.y,p.z}, score, 0.f });
+					effects.push_back({ {p.x,p.y,p.z}, score, 0.f, hole.p });
 					holeIn = true;
 					std::cout << "Hole In!" << std::endl;
 				}
@@ -131,6 +144,11 @@ int main() {
 			float color = std::max(0.f, std::min(1.f, (5.f - e.time) / 4.f));
 			render.drawParticle(e.position, 0.02, e.time, e.score);
 			render.drawScore(p, s, da, thickness, color, e.score);
+			if (e.time < 2.f) {
+				float ringRadi = (1. - pow(1. - e.time / 1.f, 3.0)) * 0.1f + hole.r * 0.75f;
+				float ringW = pow(1. - e.time / 1.f, 5.0) * 0.06f;
+				render.drawRing(e.hole, ringRadi - ringW, ringRadi);
+			}
 			e.time += 0.1;
 		}
 		effects.erase(std::remove_if(effects.begin(), effects.end(), [](Effect e) -> bool {

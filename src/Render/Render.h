@@ -83,7 +83,7 @@ class Render {
 	float width, height;
 	DefaultUniform uni;
 	Texture bgTex, digitTex;
-	Object background, ball, hole, ground, holeSide, ballShadow, shooter, text, particle;
+	Object background, ball, hole, ground, holeSide, ballShadow, shooter, text, particle, ring, arrow;
 	void buildObjects();
 	void buildModels(Model &planeModel, Model &ballModel, Model &holeSideModel, Model &shooterModel, Model &particleModel);
 	void sendModelData(Model&, std::vector<Vector3>&);
@@ -96,4 +96,6 @@ public:
 	void drawShooter(Vector3, Vector3, float);
 	void drawScore(Vector3, float, float, float, float, uint);
 	void drawParticle(Vector3, float, float, uint);
+	void drawRing(Vector2, float, float);
+	void drawArrow(Vector3, float, float);
 };
