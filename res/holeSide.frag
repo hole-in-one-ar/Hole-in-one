@@ -15,7 +15,7 @@ void main(void) {
 	vec3 n = vec3(normalize(localPos.xy), 0);
 	vec3 c = vec3(1,1,0);
 	// Diffuse
-	c *= mix(sampleSky(n, 8), vec3(1.0), 0.2);
+	c *= mix(mix(sampleSky(n, 8), sampleSky(n, 7), 0.2), vec3(1.0), 0.2);
 	// AO
 	c *= 1.5 - pow(1 - 1 / (-localPos.z + 1.0), 5);
 	// Corner

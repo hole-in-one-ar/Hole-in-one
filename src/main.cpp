@@ -16,6 +16,11 @@ struct Effect {
 	float time;
 };
 
+float eb(float x) {
+	x = 1 - x;
+	return 1 - x * x * (3 * x - 2);
+}
+
 int main() {
 	Window window(1280, 720, "app");
 	Render render(1280, 720);
@@ -35,6 +40,7 @@ int main() {
 		}
 	});
 
+	int holeWaiting = -1; // -1: stable, 0-100: animation
 	HolePos hole{ {0,0}, 0.06f };
 	physics.setHole(hole.p.x, hole.p.y, hole.r);
 	//physics.addBalls(Vec3(0, -5, 12), 2, Vec3(0, 200, 0), 1);
@@ -44,11 +50,37 @@ int main() {
 	std::mt19937 random(rd());
 	std::uniform_real_distribution<float> uniform;
 	unsigned int score = 0;
+	auto addScore = [&]() {
+		score++;
+		if (score % 5 == 0) {
+			physics.setHole(-1000, -1000, hole.r);
+			holeWaiting = 0;
+		}
+	};
 	while (window.alive()) {
 		tracking.update();
 		render.drawBackground(tracking.cameraImage);
-		render.drawHole(hole);
 		t += 0.1;
+		// Hole
+		if (holeWaiting == -1) {
+			render.drawHole(hole);
+		} else {
+			HolePos h = hole;
+			if (holeWaiting < 50) h.r *= eb(1. - holeWaiting / 50.0);
+			else h.r *= eb((holeWaiting - 50.0) / 100.0);
+			render.drawHole(h);
+			holeWaiting += 5;
+			if (holeWaiting == 50) {
+				float r = std::sqrt(uniform(random)) * 0.1;
+				float a = uniform(random) * 3.1415926535 * 2;
+				hole.p.x = cos(a) * r;
+				hole.p.y = sin(a) * r;
+			} else if (holeWaiting == 150) {
+				physics.setHole(hole.p.x, hole.p.y, hole.r);
+				holeWaiting = -1;
+			}
+		}
+		// Shooter
 		if (tracking.aliveController()) {
 			Transform tr = tracking.controller();
 			Vector3 p = tr.getOrigin();
@@ -64,6 +96,7 @@ int main() {
 				}
 			}
 		}
+		// Balls
 		std::vector<int> removeIndices;
 		unsigned int ix = 0;
 		for (const auto &b : physics.getBalls()) {
@@ -75,7 +108,7 @@ int main() {
 			if(abs(p.x) > 1 || abs(p.y) > 1 || p.z < 0.0) {
 				removeIndices.push_back(ix);
 				if (p.z < 0.0) {
-					score++;
+					addScore();
 					effects.push_back({ {p.x,p.y,p.z}, score, 0.f });
 					holeIn = true;
 					std::cout << "Hole In!" << std::endl;
@@ -86,7 +119,7 @@ int main() {
 		for (auto i : removeIndices) {
 			physics.removeBall(i);
 		}
-
+		// Effects
 		for (auto &e : effects) {
 			Vector3 p = e.position;
 			p.z += (1 - exp(-e.time*2.0)) * 0.03;
@@ -103,15 +136,7 @@ int main() {
 		effects.erase(std::remove_if(effects.begin(), effects.end(), [](Effect e) -> bool {
 			return e.time > 5.0f;
 		}), effects.end());
-
-		Vector3 p;
-		p = tracking.controller().getOrigin();
-		//render.drawBall({ p, 0.005f }, hole);
-
-		static float ti = 0;
-		ti += 0.1f;
-		//render.drawBall({ {0,0,(sin(ti)*0.5f+0.5f)*2.0f}, 1 });
-
+		// Physics
 		for(int i=0;i<10;i++) physics.simulation();
 		window.refresh();
 	}
